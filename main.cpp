@@ -1,5 +1,7 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
+#include <string>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -23,8 +25,9 @@ int main( int argc, char* args[] )
         }
         else 
         {
+            SDL_Surface* face = IMG_Load("yalefaces/subject01.normal");
             screenSurface = SDL_GetWindowSurface( window );
-            SDL_FillRect( screenSurface, NULL, SDL_MapRGB( screenSurface->format, 0xFF, 0xFF, 0xFF ) );
+            SDL_BlitSurface(face, NULL, screenSurface, NULL);
             SDL_UpdateWindowSurface( window );
             SDL_Delay( 2000 );
         }
