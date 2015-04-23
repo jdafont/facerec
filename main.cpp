@@ -24,7 +24,8 @@ int main( int argc, char* args[] )
     }
     //Load image
     Image face;
-    face.loadImage("yalefaces/subject01.normal");
+    if(!face.loadImage("yalefaces/subject01.normal"))
+        return 1;
     printf("Pixel bytes: %d\n", face.getFormat()->BitsPerPixel);
 
     /*SDL_LockSurface(face);
