@@ -10,3 +10,5 @@ An open face database will be used, provided by Yale at vision.ucsd.edu/datasets
 Image loading will be done using SDL2, to install this please use:
 
 sudo apt-get install libsdl2-dev libsdl2-image-dev
+
+This software is currently limited to 8-bit per pixel GIFs
