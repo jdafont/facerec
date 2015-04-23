@@ -1,8 +1,12 @@
 #include <iostream>
+#include <Eigen/Dense>
 #include "image.h"
 #include <stdio.h>
 #include <string>
+
+using namespace Eigen;
 using namespace std;
+
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
@@ -37,10 +41,17 @@ int main( int argc, char* args[] )
     printf("Pixel color-> Red: %d, Green: %d, Blue: %d. Index: %d\n",
       color->r, color->g, color->b, index);*/
 
+    MatrixXd m(face.getImage()->w, face.getImage()->h);
     face.lock();
-    face.getPixelIntensity(122,107);
+    int h = face.getImage()->h;
+    int w = face.getImage()->w;
+    cout << h << endl << w << endl;
+    for(int j = 0; j < h; j++) {
+        for(int i = 0; i < w; i++) {
+            m(i, j) = face.getPixelIntensity(i, j);
+        }
+    }
     face.unlock();
-
     screenSurface = SDL_GetWindowSurface( window );
     SDL_BlitSurface(face.getImage(), NULL, screenSurface, NULL);
     SDL_UpdateWindowSurface( window );
