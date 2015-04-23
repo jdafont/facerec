@@ -14,4 +14,8 @@ class Image {
     bool loadImage(string name);
     SDL_Surface* getImage();
     SDL_PixelFormat* getFormat();
+    Uint8 getPixelIntensity(int x, int y);
+
+    void lock();
+    void unlock();
 };

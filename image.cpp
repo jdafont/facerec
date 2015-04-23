@@ -25,3 +25,19 @@ SDL_Surface* Image::getImage() {
 SDL_PixelFormat* Image::getFormat() {
     return fmt;
 }
+
+Uint8 Image::getPixelIntensity(int x, int y){
+    //Assumes that the surface is locked
+    //Assumes 8 bit surface
+
+    Uint8* pixels = (Uint8*)surf->pixels;
+    Uint8 target = pixels[(y*surf->w) + x];
+    return target;
+}
+
+void Image::lock() {
+    SDL_LockSurface(surf);
+}
+void Image::unlock() {
+    SDL_UnlockSurface(surf);
+}

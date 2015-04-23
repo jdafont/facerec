@@ -37,6 +37,10 @@ int main( int argc, char* args[] )
     printf("Pixel color-> Red: %d, Green: %d, Blue: %d. Index: %d\n",
       color->r, color->g, color->b, index);*/
 
+    face.lock();
+    face.getPixelIntensity(122,107);
+    face.unlock();
+
     screenSurface = SDL_GetWindowSurface( window );
     SDL_BlitSurface(face.getImage(), NULL, screenSurface, NULL);
     SDL_UpdateWindowSurface( window );
