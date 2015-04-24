@@ -32,15 +32,6 @@ int main( int argc, char* args[] )
         return 1;
     printf("Pixel bytes: %d\n", face.getFormat()->BitsPerPixel);
 
-    /*SDL_LockSurface(face);
-    Uint8 index;
-    SDL_Color *color;
-    index = *(Uint8 *)face->pixels;
-    color = &fmt->palette->colors[index];
-    SDL_UnlockSurface(face);
-    printf("Pixel color-> Red: %d, Green: %d, Blue: %d. Index: %d\n",
-      color->r, color->g, color->b, index);*/
-
     MatrixXd m(face.getImage()->w, face.getImage()->h);
     face.lock();
     int h = face.getImage()->h;
@@ -49,10 +40,7 @@ int main( int argc, char* args[] )
     for(int j = 0; j < h; j++) {
         for(int i = 0; i < w; i++) {
             m(i, j) = face.getPixelIntensity(i, j);
-            if(m(i,j) > 200) cout << ".";
-            else cout << "*";
         }
-        cout << endl;
     }
     face.unlock();
     screenSurface = SDL_GetWindowSurface( window );
