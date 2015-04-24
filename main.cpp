@@ -49,7 +49,10 @@ int main( int argc, char* args[] )
     for(int j = 0; j < h; j++) {
         for(int i = 0; i < w; i++) {
             m(i, j) = face.getPixelIntensity(i, j);
+            if(m(i,j) > 200) cout << ".";
+            else cout << "*";
         }
+        cout << endl;
     }
     face.unlock();
     screenSurface = SDL_GetWindowSurface( window );
