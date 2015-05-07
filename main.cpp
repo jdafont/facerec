@@ -10,9 +10,29 @@ using namespace std;
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+
 int main( int argc, char* args[] )
 {
+    string faceLocs[] = {
+        "yalefaces/subject01.normal",
+        "yalefaces/subject02.normal",
+        "yalefaces/subject03.normal",
+        "yalefaces/subject04.normal",
+        "yalefaces/subject05.normal",
+        "yalefaces/subject06.normal",
+        "yalefaces/subject07.normal",
+        "yalefaces/subject08.normal",
+        "yalefaces/subject09.normal",
+        "yalefaces/subject10.normal",
+        "yalefaces/subject11.normal",
+        "yalefaces/subject12.normal",
+        "yalefaces/subject13.normal",
+        "yalefaces/subject14.normal",
+        "yalefaces/subject15.normal"
+    };
+    int numFaces = sizeof(faceLocs)/sizeof(string);
     SDL_Window* window = NULL;
+    SDL_Renderer* renderer = NULL;
 
     SDL_Surface* screenSurface = NULL;
 
@@ -21,35 +41,86 @@ int main( int argc, char* args[] )
         return 1;
     }
 
-    window = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+    window = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN ); 
+
     if( window == NULL ){
         printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
         return 1;
     }
-    //Load image
-    Image face;
-    if(!face.loadImage("yalefaces/subject01.normal"))
-        return 1;
-    printf("Pixel bytes: %d\n", face.getFormat()->BitsPerPixel);
 
-    MatrixXd m(face.getImage()->w, face.getImage()->h);
-    face.lock();
-    int h = face.getImage()->h;
-    int w = face.getImage()->w;
-    cout << h << endl << w << endl;
-    for(int j = 0; j < h; j++) {
-        for(int i = 0; i < w; i++) {
-            m(i, j) = face.getPixelIntensity(i, j);
+    renderer = SDL_CreateRenderer(window, -1, 0);
+    if( renderer == NULL ){
+        printf( "Renderer could not be created! SDL_Error: %s\n", SDL_GetError() );
+        return 1;
+    }
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderClear(renderer);
+
+    SDL_Texture * texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    //Load image
+    Image* faces = new Image[numFaces];
+    for(int i = 0; i < numFaces; i++) {
+        if(!faces[i].loadImage(faceLocs[i])) {
+            cout << "Image " << faceLocs[i] << " failed to load." << endl;
+            return 1;
         }
     }
-    face.unlock();
-    screenSurface = SDL_GetWindowSurface( window );
-    SDL_BlitSurface(face.getImage(), NULL, screenSurface, NULL);
-    SDL_UpdateWindowSurface( window );
-    SDL_Delay( 2000 );
+    printf("Pixel bytes: %d\n", faces[0].getFormat()->BitsPerPixel);
+
+    int h = faces[0].getImage()->h;
+    int w = faces[0].getImage()->w;
+    MatrixXd m(w*h, numFaces);
+    cout << h << endl << w << endl;
+
+    //Copy pixel intensity data to matrix
+    for(int k = 0; k < numFaces; k++) {
+        faces[k].lock();
+        for(int j = 0; j < h; j++) {
+            for(int i = 0; i < w; i++) {
+                //Concat to vector
+                m((j*w + i), k) = faces[k].getPixelIntensity(i, j); 
+            }
+        }
+        faces[k].unlock();
+    }
+
+    //Calculate average face from matrix data
+    MatrixXd psi(w*h, 1);
+    for(int i = 0; i < w*h; i++) {
+        int sum = 0;
+        for(int k = 0; k < numFaces; k++) { 
+           sum += m(i, k); 
+        }
+        float average = sum/numFaces;
+        psi(i, 0) = average;
+    }
+    for(int x = 0; x < w; x++){
+        for(int y = 0; y< h; y++) {
+            int i = (y*w) + x;
+            int c = psi(i, 0);
+            SDL_SetRenderDrawColor(renderer, c, c, c, 255);
+            SDL_RenderDrawPoint(renderer, x, y);
+        }
+    }
+
+    SDL_RenderPresent(renderer);
+    SDL_Delay( 4000 );
+
+    SDL_Surface* screenshot = SDL_CreateRGBSurface(0, SCREEN_WIDTH, 
+      SCREEN_HEIGHT, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+    if(screenshot) {
+        SDL_RenderReadPixels(renderer, NULL, SDL_GetWindowPixelFormat(window),
+          screenshot->pixels, screenshot->pitch);
+        SDL_SaveBMP(screenshot, "Screenshot.bmp");
+        SDL_FreeSurface(screenshot);
+    }
+
 
     SDL_DestroyWindow( window );
-
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
     SDL_Quit();
     return 0;
 
