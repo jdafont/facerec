@@ -61,17 +61,23 @@ int main( int argc, char* args[] )
 
     //Load image
     Image* faces = new Image[numFaces];
+    Image* testFace = new Image;
     for(int i = 0; i < numFaces; i++) {
         if(!faces[i].loadImage(faceLocs[i])) {
             cout << "Image " << faceLocs[i] << " failed to load." << endl;
             return 1;
         }
     }
+    if(!testFace->loadImage(args[1])) {
+        cout << "Could not load or determine which image to identify." << endl;
+        return 1;
+    }
     printf("Pixel bytes: %d\n", faces[0].getFormat()->BitsPerPixel);
 
     int h = faces[0].getImage()->h;
     int w = faces[0].getImage()->w;
     MatrixXd m(w*h, numFaces);
+    MatrixXd identify(w*h, 1);
     cout << h << endl << w << endl;
 
     //Copy pixel intensity data to matrix
@@ -85,6 +91,15 @@ int main( int argc, char* args[] )
         }
         faces[k].unlock();
     }
+
+    testFace->lock();
+    for(int j = 0; j < h; j++) {
+        for(int i = 0; i < w; i++) {
+            //Concat to vector
+            identify((j*w + i), 0) = testFace->getPixelIntensity(i, j); 
+        }
+    }
+    testFace->unlock();
 
     //Calculate average face from matrix data
     MatrixXd psi(w*h, 1);
@@ -106,6 +121,11 @@ int main( int argc, char* args[] )
             }
         }
     }
+    for(int j = 0; j < h; j++) {
+        for(int i = 0; i < w; i++) {
+            identify(j*w + i, 0) = identify(j*w + i, 0) - psi(j*w + i, 0);
+        }
+    }
 
     MatrixXd S(numFaces, numFaces);
     S = A.transpose() * A;
@@ -114,10 +134,11 @@ int main( int argc, char* args[] )
     //cout << es.eigenvectors() << endl << es.eigenvalues() << endl;
     
     //Compute the first eigenface?
-
+    MatrixXd eigenFaces(w*h, numFaces);
     for(int eig = 0; eig < numFaces; eig++) {
         MatrixXd EigFace1(w*h, 1);
         EigFace1 =  (A*(es.eigenvectors().col(eig).real())).cast<double>();
+        eigenFaces.col(eig) = EigFace1.col(0);
 
         double max = 0;
         double min = 0;
@@ -141,8 +162,41 @@ int main( int argc, char* args[] )
         }
     }
 
+    //TODO:  Project all original faces into face space
+    // wk = UkTRANSPOSE(Gamma - Psi)
+    //A has all mean reduced faces
+    MatrixXd omega(numFaces, numFaces);
+
+    for(int i = 0; i < numFaces; i++) {
+        for(int k = 0; k < numFaces; k++) {
+            omega(k,i) = eigenFaces.col(k).transpose() * A.col(i);
+        }
+    }
+    MatrixXd projIdentify(numFaces, 1);
+    for(int k = 0; k < numFaces; k++) {
+        projIdentify(k,0) = eigenFaces.col(k).transpose() * identify.col(0);
+    }
+
+    //cout << projIdentify << endl;
+
+    int match = -1;
+    float minDist = -1;
+    for(int i = 0; i < numFaces; i++) {
+        float dist = (omega.col(i) - projIdentify.col(0)).norm();
+        if(minDist == -1){
+            minDist = dist;
+            match = i;
+        }
+        else if (dist < minDist) {
+            match = i;
+            minDist = dist;
+        }
+    }
+
+    cout << "The closest match is " << faceLocs[match] << endl;
+
     SDL_RenderPresent(renderer);
-    SDL_Delay( 4000 );
+    //SDL_Delay( 4000 );
 
     /*(SDL_Surface* screenshot = SDL_CreateRGBSurface(0, SCREEN_WIDTH, 
       SCREEN_HEIGHT, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
