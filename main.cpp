@@ -7,12 +7,13 @@
 using namespace Eigen;
 using namespace std;
 
-const int SCREEN_WIDTH = 320*4;
-const int SCREEN_HEIGHT = 243*4;
+const int SCREEN_WIDTH = 320*2;
+const int SCREEN_HEIGHT = 243*1;
 
 
 int main( int argc, char* args[] )
 {
+    SDL_Event event;
     string faceLocs[] = {
         "yalefaces/subject01.normal",
         "yalefaces/subject02.normal",
@@ -100,7 +101,7 @@ int main( int argc, char* args[] )
         }
     }
     testFace->unlock();
-
+    
     //Calculate average face from matrix data
     MatrixXd psi(w*h, 1);
     for(int i = 0; i < w*h; i++) {
@@ -121,9 +122,11 @@ int main( int argc, char* args[] )
             }
         }
     }
+
+    MatrixXd idavg(w*h, 1);
     for(int j = 0; j < h; j++) {
         for(int i = 0; i < w; i++) {
-            identify(j*w + i, 0) = identify(j*w + i, 0) - psi(j*w + i, 0);
+            idavg(j*w + i, 0) = identify(j*w + i, 0) - psi(j*w + i, 0);
         }
     }
 
@@ -151,7 +154,7 @@ int main( int argc, char* args[] )
             normd(i, 0) = ((EigFace1(i,0)-min)*(255))/(max-min);
         }
 
-        //Draw the first eigen face
+        /*//Draw the first eigen face
         for(int x = 0; x < w; x++){
             for(int y = 0; y< h; y++) {
                 int i = (y*w) + x;
@@ -160,6 +163,7 @@ int main( int argc, char* args[] )
                 SDL_RenderDrawPoint(renderer, x + ((eig%4)*320), y + (eig/4)*243);
             }
         }
+        */
     }
 
     //TODO:  Project all original faces into face space
@@ -174,7 +178,7 @@ int main( int argc, char* args[] )
     }
     MatrixXd projIdentify(numFaces, 1);
     for(int k = 0; k < numFaces; k++) {
-        projIdentify(k,0) = eigenFaces.col(k).transpose() * identify.col(0);
+        projIdentify(k,0) = eigenFaces.col(k).transpose() * idavg.col(0);
     }
 
     //cout << projIdentify << endl;
@@ -194,6 +198,22 @@ int main( int argc, char* args[] )
     }
 
     cout << "The closest match is " << faceLocs[match] << endl;
+    for(int x = 0; x < w; x++){
+        for(int y = 0; y< h; y++) {
+            int i = (y*w) + x;
+            int c = identify(i, 0);
+            SDL_SetRenderDrawColor(renderer, c, c, c, 255);
+            SDL_RenderDrawPoint(renderer, x, y);
+        }
+    }
+    for(int x = 0; x < w; x++){
+        for(int y = 0; y< h; y++) {
+            int i = (y*w) + x;
+            int c = m(i, match);
+            SDL_SetRenderDrawColor(renderer, c, c, c, 255);
+            SDL_RenderDrawPoint(renderer, x + 320, y);
+        }
+    }
 
     SDL_RenderPresent(renderer);
     //SDL_Delay( 4000 );
@@ -207,7 +227,12 @@ int main( int argc, char* args[] )
         SDL_FreeSurface(screenshot);
     }*/
 
-
+    bool quit = false;
+    while(!quit)
+    while(SDL_PollEvent( &event )) {
+        if( event.type == SDL_QUIT )
+            quit = true;
+    }
     SDL_DestroyWindow( window );
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);
