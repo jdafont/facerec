@@ -7,8 +7,8 @@
 using namespace Eigen;
 using namespace std;
 
-const int SCREEN_WIDTH = 320;
-const int SCREEN_HEIGHT = 243;
+const int SCREEN_WIDTH = 320*4;
+const int SCREEN_HEIGHT = 243*4;
 
 
 int main( int argc, char* args[] )
@@ -113,29 +113,43 @@ int main( int argc, char* args[] )
     EigenSolver<MatrixXd> es(S);
     //cout << es.eigenvectors() << endl << es.eigenvalues() << endl;
     
-    int eig = atoi(args[1]);
     //Compute the first eigenface?
-    MatrixXd EigFace1(w*h, 1);
-    EigFace1 =  (A*(es.eigenvectors().col(eig).real())).cast<double>();
-    //Draw the first eigen face
-    for(int x = 0; x < w; x++){
-        for(int y = 0; y< h; y++) {
-            int i = (y*w) + x;
-            int c = EigFace1(i, 0);
-            SDL_SetRenderDrawColor(renderer, c, c, c, 255);
-            SDL_RenderDrawPoint(renderer, x, y);
+
+    for(int eig = 0; eig < numFaces; eig++) {
+        MatrixXd EigFace1(w*h, 1);
+        EigFace1 =  (A*(es.eigenvectors().col(eig).real())).cast<double>();
+
+        double max = 0;
+        double min = 0;
+        for(int i = 0; i < w*h; i++) {
+            if(EigFace1(i, 0) < min) min = EigFace1(i,0);
+            if(EigFace1(i, 0) > max) max = EigFace1(i,0);
+        }
+        MatrixXd normd(w*h, 1);
+        for(int i = 0; i < w*h; i++) {
+            normd(i, 0) = ((EigFace1(i,0)-min)*(255))/(max-min);
+        }
+
+        //Draw the first eigen face
+        for(int x = 0; x < w; x++){
+            for(int y = 0; y< h; y++) {
+                int i = (y*w) + x;
+                int c = normd(i, 0);
+                SDL_SetRenderDrawColor(renderer, c, c, c, 255);
+                SDL_RenderDrawPoint(renderer, x + ((eig%4)*320), y + (eig/4)*243);
+            }
         }
     }
 
     SDL_RenderPresent(renderer);
     SDL_Delay( 4000 );
 
-    /*SDL_Surface* screenshot = SDL_CreateRGBSurface(0, SCREEN_WIDTH, 
+    /*(SDL_Surface* screenshot = SDL_CreateRGBSurface(0, SCREEN_WIDTH, 
       SCREEN_HEIGHT, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
     if(screenshot) {
         SDL_RenderReadPixels(renderer, NULL, SDL_GetWindowPixelFormat(window),
           screenshot->pixels, screenshot->pitch);
-        SDL_SaveBMP(screenshot, "Screenshot.bmp");
+        SDL_SaveBMP(screenshot, "EigenFaces.bmp");
         SDL_FreeSurface(screenshot);
     }*/
 
