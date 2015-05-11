@@ -1,7 +1,7 @@
 # facerec
 Facial recognition for Linear Algebra (SP15) honors project.  Based on Turk and Pentland paper
 
-Using Eigen lib to detect the faces of local students at UL using eigen vectors and eigenvalues
+Using Eigen lib to detect the faces using eigen vectors and eigenvalues, based on PCA
 
 Eigen is used as it does not require the install of LAPACK, BLAS, or ATLAS.  This means that it will be more easily installed.  
 
